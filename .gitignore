@@ -1,0 +1,94 @@
+# =========================
+# Python
+# =========================
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg-info/
+dist/
+build/
+*.egg
+
+# =========================
+# Virtual Environments
+# =========================
+venv/
+env/
+.env/
+
+# =========================
+# IDE / Editor
+# =========================
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.project
+.settings/
+
+# =========================
+# Datasets (too large for GitHub)
+# =========================
+dataset/
+dataset_split/
+dataset_split_2/
+dataset_split_3/
+dataset_split_4/
+dataset_split_5/
+dataset_split_no_filter/
+processed_data/
+
+# =========================
+# Uploaded / Generated Files
+# =========================
+static/uploads/
+static/output/
+static/frames/
+static/heatmaps/
+uploads/
+forensics_output/
+gradcam_result/
+test_images/
+
+# =========================
+# Logs
+# =========================
+*.log
+*.csv
+scripts/*.log
+scripts/*.csv
+
+# =========================
+# Large / Archive Files
+# =========================
+*.rar
+*.zip
+*.tar.gz
+*.7z
+
+# =========================
+# Test Videos
+# =========================
+test_video.mp4
+video_with_anomaly.mp4
+
+# =========================
+# Temporary / Misc
+# =========================
+*.tmp
+*.bak
+New Text Document.txt
+metadata.txt
+metadata_after.txt
+gradcam_result.jpg
+
+# =========================
+# Model files (optional - uncomment to exclude)
+# =========================
+# models/*.h5
+# models/*.pb
+# models/variables/
+# models/assets/
+# models/face_detector/

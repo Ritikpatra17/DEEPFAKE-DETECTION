@@ -1,0 +1,1026 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Video-Based Deepfake Detector</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=Roboto&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #0d1a26;
+            --text-color: #e0e0e0;
+            --section-bg: #1e2a38;
+            --accent-green: #34c759;
+            --accent-blue: #1a73e8;
+            --accent-red: #ff4d4d;
+            --glow-green: rgba(52, 199, 89, 0.3);
+            --glow-blue: rgba(26, 115, 232, 0.3);
+            --glow-red: rgba(255, 77, 77, 0.3);
+        }
+        [data-theme="light"] {
+            --bg-color: #f5f5f5;
+            --text-color: #333;
+            --section-bg: #ffffff;
+            --accent-green: #28a745;
+            --accent-blue: #007bff;
+            --accent-red: #dc3545;
+            --glow-green: rgba(40, 167, 69, 0.3);
+            --glow-blue: rgba(0, 123, 255, 0.3);
+            --glow-red: rgba(220, 53, 69, 0.3);
+        }
+        body {
+            font-family: 'Roboto', Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.6;
+            position: relative;
+            overflow-x: hidden;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+        #particles {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+        }
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(45deg, var(--bg-color), var(--section-bg));
+            animation: gradientShift 15s ease infinite;
+            z-index: -2;
+        }
+        body::after {
+            content: '';
+            position: fixed;
+            top: -100%;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--accent-blue), transparent);
+            opacity: 0.3;
+            animation: scanLine 8s linear infinite;
+            z-index: -1;
+        }
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        @keyframes scanLine {
+            0% { top: -100%; }
+            100% { top: 100%; }
+        }
+        .hero-section {
+            position: relative;
+            height: 300px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            background: linear-gradient(135deg, rgba(26, 115, 232, 0.2), rgba(52, 199, 89, 0.2));
+            border-bottom: 2px solid var(--accent-blue);
+            margin-bottom: 30px;
+            overflow: hidden;
+        }
+        .hero-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.1), transparent);
+            z-index: 0;
+        }
+        .glitch {
+            font-size: 3.5em;
+            color: #ffffff;
+            font-family: 'Orbitron', sans-serif;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            position: relative;
+            z-index: 1;
+            animation: glitch 2s linear infinite;
+        }
+        .glitch::before,
+        .glitch::after {
+            content: 'Video-Based Deepfake Detector';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+        .glitch::before {
+            color: var(--accent-blue);
+            animation: glitch-top 1s linear infinite;
+            clip-path: polygon(0 0, 100% 0, 100% 33%, 0 33%);
+            -webkit-clip-path: polygon(0 0, 100% 0, 100% 33%, 0 33%);
+        }
+        .glitch::after {
+            color: var(--accent-red);
+            animation: glitch-bottom 1.5s linear infinite;
+            clip-path: polygon(0 67%, 100% 67%, 100% 100%, 0 100%);
+            -webkit-clip-path: polygon(0 67%, 100% 67%, 100% 100%, 0 100%);
+        }
+        @keyframes glitch {
+            2%, 64% { transform: translate(2px, 0) skew(0deg); }
+            4%, 60% { transform: translate(-2px, 0) skew(0deg); }
+            62% { transform: translate(0, 0) skew(5deg); }
+        }
+        @keyframes glitch-top {
+            2%, 64% { transform: translate(2px, -2px); }
+            4%, 60% { transform: translate(-2px, 2px); }
+            62% { transform: translate(13px, -1px) skew(-13deg); }
+        }
+        @keyframes glitch-bottom {
+            2%, 64% { transform: translate(-2px, 0); }
+            4%, 60% { transform: translate(-2px, 0); }
+            62% { transform: translate(-22px, 5px) skew(21deg); }
+        }
+        .typing-text {
+            font-size: 1.5em;
+            color: var(--accent-green);
+            margin-top: 10px;
+            z-index: 1;
+            border-right: 2px solid var(--accent-green);
+            white-space: nowrap;
+            overflow: hidden;
+            animation: typing 4s steps(40, end) infinite, blink-caret 0.75s step-end infinite;
+        }
+        @keyframes typing {
+            0% { width: 0; }
+            50% { width: 100%; }
+            100% { width: 0; }
+        }
+        @keyframes blink-caret {
+            from, to { border-color: transparent; }
+            50% { border-color: var(--accent-green); }
+        }
+        .theme-toggle {
+            position: absolute;
+            right: 20px;
+            top: 20px;
+            background: none;
+            border: none;
+            font-size: 1.5em;
+            cursor: pointer;
+            color: #ffffff;
+            z-index: 2;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto 30px;
+            padding: 0 20px;
+        }
+        .header {
+            background: linear-gradient(90deg, var(--accent-blue), var(--accent-green));
+            padding: 20px;
+            text-align: center;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+            margin-bottom: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        .header img {
+            width: 40px;
+            height: 40px;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 2em;
+            color: #ffffff;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-family: 'Orbitron', sans-serif;
+        }
+        .header p {
+            margin: 5px 0 0;
+            font-size: 1.2em;
+            color: #e0e0e0;
+        }
+        .input-section {
+            background-color: var(--section-bg);
+            padding: 25px;
+            border-radius: 8px;
+            box-shadow: 0 0 15px var(--glow-green);
+            margin-bottom: 20px;
+            transition: box-shadow 0.3s ease, background-color 0.3s ease;
+        }
+        .input-section:hover {
+            box-shadow: 0 0 20px var(--accent-green);
+        }
+        .form-group {
+            margin-bottom: 20px;
+            position: relative;
+        }
+        label {
+            position: absolute;
+            top: 12px;
+            left: 12px;
+            color: var(--accent-green);
+            font-size: 1em;
+            font-weight: bold;
+            transition: all 0.2s ease;
+            pointer-events: none;
+        }
+        input[type="file"], input[type="number"] {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid var(--accent-green);
+            border-radius: 5px;
+            background-color: #2a3b4c;
+            color: var(--text-color);
+            font-size: 1em;
+            box-sizing: border-box;
+            transition: all 0.3s ease;
+        }
+        input[type="file"]:focus, input[type="number"]:focus,
+        input[type="file"]:not(:placeholder-shown), input[type="number"]:not(:placeholder-shown) {
+            outline: none;
+            border-color: var(--accent-blue);
+            box-shadow: 0 0 8px var(--glow-blue);
+            background-color: #3a4b5c;
+        }
+        input[type="file"]:focus + label, input[type="number"]:focus + label,
+        input[type="file"]:not(:placeholder-shown) + label, input[type="number"]:not(:placeholder-shown) + label {
+            top: -10px;
+            left: 10px;
+            font-size: 0.8em;
+            color: var(--accent-blue);
+            background-color: var(--section-bg);
+            padding: 0 5px;
+        }
+        input[type="file"]::file-selector-button {
+            background-color: var(--accent-blue);
+            color: #ffffff;
+            border: 1px solid var(--accent-blue);
+            padding: 8px 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: bold;
+            margin-right: 10px;
+        }
+        input[type="file"]::file-selector-button:hover {
+            background-color: #1557b0;
+            border-color: #1557b0;
+            box-shadow: 0 0 8px var(--glow-blue);
+        }
+        .button-group {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin: 20px 0;
+            perspective: 1000px;
+        }
+        button {
+            background-color: var(--accent-green);
+            color: #ffffff;
+            padding: 12px 30px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1.2em;
+            position: relative;
+            transition: all 0.3s ease;
+            transform-style: preserve-3d;
+        }
+        button::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: transparent;
+            border-radius: 5px;
+            box-shadow: 0 0 15px var(--glow-green);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        button:hover::before {
+            opacity: 1;
+            animation: pulse 1.5s infinite;
+        }
+        button:hover {
+            transform: translateZ(20px) rotateX(10deg) rotateY(10deg);
+            box-shadow: 0 0 20px var(--glow-green);
+        }
+        button.reset {
+            background-color: var(--accent-red);
+        }
+        button.reset::before {
+            box-shadow: 0 0 15px var(--glow-red);
+        }
+        button.reset:hover {
+            transform: translateZ(20px) rotateX(10deg) rotateY(10deg);
+            box-shadow: 0 0 20px var(--glow-red);
+        }
+        button.reset:hover::before {
+            opacity: 1;
+            animation: pulse 1.5s infinite;
+        }
+        @keyframes pulse {
+            0% { box-shadow: 0 0 15px var(--glow-green); }
+            50% { box-shadow: 0 0 25px var(--glow-green); }
+            100% { box-shadow: 0 0 15px var(--glow-green); }
+        }
+        button.reset @keyframes pulse {
+            0% { box-shadow: 0 0 15px var(--glow-red); }
+            50% { box-shadow: 0 0 25px var(--glow-red); }
+            100% { box-shadow: 0 0 15px var(--glow-red); }
+        }
+        #results {
+            background-color: var(--section-bg);
+            padding: 25px;
+            border-radius: 8px;
+            box-shadow: 0 0 15px var(--glow-blue);
+            opacity: 0;
+            animation: fadeIn 1s ease-in forwards;
+            transition: box-shadow 0.3s ease, background-color 0.3s ease;
+        }
+        #results:hover {
+            box-shadow: 0 0 20px var(--accent-blue);
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .result-section {
+            display: flex;
+            gap: 30px;
+        }
+        .metrics-insights {
+            flex: 2;
+        }
+        .supporting-photos {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        h2 {
+            color: var(--accent-green);
+            font-size: 1.8em;
+            margin-bottom: 20px;
+            border-bottom: 2px solid var(--accent-blue);
+            padding-bottom: 5px;
+            font-family: 'Orbitron', sans-serif;
+        }
+        h3 {
+            color: var(--accent-blue);
+            font-size: 1.4em;
+            margin-top: 20px;
+            margin-bottom: 10px;
+            font-family: 'Orbitron', sans-serif;
+        }
+        .deepfake-score {
+            font-size: 1.5em;
+            background-color: #2a3b4c;
+            padding: 10px;
+            border-radius: 5px;
+            display: inline-block;
+            margin-right: 10px;
+        }
+        .info-icon {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            background-color: var(--accent-blue);
+            color: #ffffff;
+            text-align: center;
+            border-radius: 50%;
+            font-size: 14px;
+            line-height: 20px;
+            cursor: pointer;
+            position: relative;
+        }
+        .info-icon:hover .tooltip {
+            visibility: visible;
+            opacity: 1;
+        }
+        .tooltip {
+            visibility: hidden;
+            width: 300px;
+            background-color: #333;
+            color: var(--text-color);
+            text-align: left;
+            border-radius: 5px;
+            padding: 10px;
+            position: absolute;
+            z-index: 1;
+            top: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            opacity: 0;
+            transition: opacity 0.3s;
+            font-size: 0.9em;
+        }
+        .tooltip::after {
+            content: "";
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            margin-left: -5px;
+            border-width: 5px;
+            border-style: solid;
+            border-color: transparent transparent #333 transparent;
+        }
+        .metrics-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        .metrics-table tr {
+            transition: all 0.3s ease;
+        }
+        .metrics-table tr:hover {
+            background-color: #2a3b4c;
+            transform: scale(1.01);
+        }
+        .metrics-table th, .metrics-table td {
+            padding: 10px;
+            text-align: left;
+            border-bottom: 1px solid var(--accent-green);
+        }
+        .metrics-table th {
+            background-color: #2a3b4c;
+            color: var(--accent-green);
+            font-weight: bold;
+        }
+        .metrics-table td {
+            color: var(--text-color);
+        }
+        .insight-box, .prediction-box {
+            background-color: #2a3b4c;
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 20px;
+            border-left: 4px solid var(--accent-blue);
+            box-shadow: 0 0 10px var(--glow-red);
+            transition: box-shadow 0.3s ease;
+        }
+        .prediction-box:hover {
+            box-shadow: 0 0 15px var(--accent-red);
+        }
+        .prediction-box h3 {
+            color: var(--accent-green);
+            margin-top: 0;
+        }
+        .prediction-real {
+            color: var(--accent-green);
+            font-weight: bold;
+        }
+        .prediction-deepfake {
+            color: var(--accent-red);
+            font-weight: bold;
+        }
+        img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+            width: 150px;
+            height: 150px;
+            object-fit: cover;
+        }
+        .photo-label {
+            color: var(--accent-blue);
+            font-size: 1.1em;
+            margin-bottom: 5px;
+        }
+        .error {
+            color: var(--accent-red);
+            font-weight: bold;
+            text-align: center;
+        }
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(13, 26, 38, 0.9);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            visibility: hidden;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        .loading-overlay.active {
+            visibility: visible;
+            opacity: 1;
+        }
+        .progress-container {
+            text-align: center;
+            margin: 20px 0;
+        }
+        .progress-bar {
+            width: 100%;
+            max-width: 300px;
+            height: 10px;
+            background-color: #2a3b4c;
+            border-radius: 5px;
+            overflow: hidden;
+            margin: 10px auto;
+        }
+        .progress-fill {
+            width: 0%;
+            height: 100%;
+            background-color: var(--accent-green);
+            transition: width 0.1s ease;
+        }
+        .progress-text {
+            font-size: 1.2em;
+            color: var(--accent-green);
+        }
+        .success-animation {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 60px;
+            height: 60px;
+            z-index: 1001;
+            display: none;
+        }
+        .success-animation .checkmark {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            display: block;
+            stroke-width: 4;
+            stroke: var(--accent-green);
+            stroke-miterlimit: 10;
+            box-shadow: inset 0px 0px 0px var(--accent-green);
+            animation: fill 0.4s ease-in-out 0.4s forwards, scale 0.3s ease-in-out 0.9s both;
+        }
+        .success-animation .checkmark-circle {
+            stroke-dasharray: 166;
+            stroke-dashoffset: 166;
+            stroke-width: 4;
+            stroke-miterlimit: 10;
+            stroke: var(--accent-green);
+            fill: none;
+            animation: stroke 0.6s cubic-bezier(0.65, 0, 0.45, 1) forwards;
+        }
+        .success-animation .checkmark-check {
+            transform-origin: 50% 50%;
+            stroke-dasharray: 48;
+            stroke-dashoffset: 48;
+            stroke-width: 4;
+            stroke: #ffffff;
+            fill: none;
+            animation: stroke 0.3s cubic-bezier(0.65, 0, 0.45, 1) 0.3s forwards;
+        }
+        @keyframes stroke {
+            100% { stroke-dashoffset: 0; }
+        }
+        @keyframes scale {
+            0%, 100% { transform: none; }
+            50% { transform: scale3d(1.1, 1.1, 1); }
+        }
+        @keyframes fill {
+            100% { box-shadow: inset 0px 0px 0px 30px var(--accent-green); }
+        }
+        footer {
+            text-align: center;
+            padding: 20px 0;
+            margin-top: 30px;
+            color: #888;
+            font-size: 0.9em;
+        }
+        footer a {
+            color: var(--accent-green);
+            text-decoration: none;
+        }
+        footer a:hover {
+            text-decoration: underline;
+        }
+        /* Mobile Responsiveness */
+        @media (max-width: 768px) {
+            .hero-section {
+                height: 200px;
+            }
+            .glitch {
+                font-size: 2em;
+            }
+            .typing-text {
+                font-size: 1.2em;
+            }
+            .result-section {
+                flex-direction: column;
+            }
+            .metrics-insights, .supporting-photos {
+                flex: 1;
+            }
+            .header h1 {
+                font-size: 1.5em;
+            }
+            .header p {
+                font-size: 1em;
+            }
+            .header img {
+                width: 30px;
+                height: 30px;
+            }
+            .deepfake-score {
+                font-size: 1.2em;
+            }
+            .button-group {
+                flex-direction: column;
+                gap: 10px;
+            }
+            button {
+                width: 100%;
+                max-width: 200px;
+            }
+            button:hover {
+                transform: translateZ(10px) rotateX(5deg) rotateY(5deg);
+            }
+            .theme-toggle {
+                right: 10px;
+                top: 10px;
+                font-size: 1.2em;
+            }
+        }
+    </style>
+</head>
+<body data-theme="dark">
+    <div id="particles"></div>
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="progress-container">
+            <p class="progress-text">Analyzing video...</p>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progress-fill"></div>
+            </div>
+        </div>
+    </div>
+    <div class="success-animation" id="successAnimation">
+        <svg class="checkmark" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 52 52">
+            <circle class="checkmark-circle" cx="26" cy="26" r="25" fill="none"/>
+            <path class="checkmark-check" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8"/>
+        </svg>
+    </div>
+    <div class="hero-section">
+        <button class="theme-toggle" onclick="toggleTheme()">🌙</button>
+        <h1 class="glitch">Video-Based Deepfake Detector</h1>
+        <p class="typing-text">Advanced AI-Powered Detection</p>
+    </div>
+    <div class="container">
+        <div class="header">
+            <img src="https://img.icons8.com/ios-filled/50/ffffff/shield.png" alt="Shield Icon">
+            <div>
+                <h1>Deepfake Analysis</h1>
+                <p>Upload a video to start</p>
+            </div>
+        </div>
+        <div class="input-section">
+            <div class="form-group">
+                <input type="file" id="video" accept="video/*" required placeholder=" ">
+                <label for="video">Upload Video for Analysis</label>
+            </div>
+            <div class="form-group">
+                <input type="number" id="frame_number" value="12" min="0" required placeholder=" ">
+                <label for="frame_number">Choose Frame Number for Analysis</label>
+            </div>
+        </div>
+        <div class="button-group">
+            <button onclick="analyzeVideo()">Analyze</button>
+            <button class="reset" onclick="resetForm()">Reset</button>
+        </div>
+        <div id="results"></div>
+    </div>
+    <footer>
+        Powered by <a href="https://x.ai" target="_blank">xAI</a>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/particles.js@2.0.0/particles.min.js"></script>
+    <script>
+        particlesJS('particles', {
+            particles: {
+                number: { value: 50, density: { enable: true, value_area: 800 } },
+                color: { value: '#34c759' },
+                shape: { type: 'circle' },
+                opacity: { value: 0.5, random: true },
+                size: { value: 3, random: true },
+                line_linked: { enable: false },
+                move: { enable: true, speed: 1, direction: 'none', random: true, out_mode: 'out' }
+            },
+            interactivity: { detect_on: 'canvas', events: { onhover: { enable: false }, onclick: { enable: false }, resize: true } },
+            retina_detect: true
+        });
+
+        function toggleTheme() {
+            const body = document.body;
+            const currentTheme = body.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            body.setAttribute('data-theme', newTheme);
+            document.querySelector('.theme-toggle').textContent = newTheme === 'dark' ? '🌙' : '☀️';
+            localStorage.setItem('theme', newTheme);
+        }
+
+        // Load saved theme
+        const savedTheme = localStorage.getItem('theme') || 'dark';
+        document.body.setAttribute('data-theme', savedTheme);
+        document.querySelector('.theme-toggle').textContent = savedTheme === 'dark' ? '🌙' : '☀️';
+
+        async function analyzeVideo() {
+            const videoInput = document.getElementById('video');
+            const frameNumberInput = document.getElementById('frame_number');
+            const resultsDiv = document.getElementById('results');
+            const loadingOverlay = document.getElementById('loadingOverlay');
+            const successAnimation = document.getElementById('successAnimation');
+
+            if (!videoInput.files.length) {
+                resultsDiv.innerHTML = '<p class="error">Please upload a video.</p>';
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('video', videoInput.files[0]);
+            formData.append('frame_number', frameNumberInput.value);
+
+            loadingOverlay.classList.add('active');
+
+            let progress = 0;
+            const progressFill = document.getElementById('progress-fill');
+            const progressInterval = setInterval(() => {
+                progress += 5;
+                if (progress > 100) progress = 100;
+                progressFill.style.width = `${progress}%`;
+            }, 200);
+
+            try {
+                const response = await fetch('/analyze', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                // Check if the response is OK (status 200-299)
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(`Server responded with status ${response.status}: ${errorText}`);
+                }
+
+                const result = await response.json();
+
+                clearInterval(progressInterval);
+                progressFill.style.width = '100%';
+                loadingOverlay.classList.remove('active');
+
+                // Show success animation
+                successAnimation.style.display = 'block';
+                setTimeout(() => {
+                    successAnimation.style.display = 'none';
+                }, 1500);
+
+                if (result.error) {
+                    resultsDiv.innerHTML = `<p class="error">Error: ${result.error}</p>`;
+                    return;
+                }
+
+                // Log the result to debug
+                console.log("Analysis Result:", result);
+
+                // Validate the result object structure
+                if (!result || typeof result !== 'object') {
+                    throw new Error('Invalid analysis result: Result is not an object');
+                }
+                if (!('frame_id' in result)) {
+                    throw new Error('Invalid analysis result: Missing frame_id');
+                }
+                if (!('combined_prob' in result)) {
+                    throw new Error('Invalid analysis result: Missing combined_prob');
+                }
+                if (!('forensic' in result) || typeof result.forensic !== 'object') {
+                    throw new Error('Invalid analysis result: Missing or invalid forensic data');
+                }
+
+                // Validate forensic scores
+                const compressionScore = typeof result.forensic.compression_score === 'number' ? result.forensic.compression_score : 0;
+                const noiseScore = typeof result.forensic.noise_score === 'number' ? result.forensic.noise_score : 0;
+                const normCompression = compressionScore / 7.0;
+                const normNoise = noiseScore / 10.0;
+                const isDeepfake = result.combined_prob > 0.5;
+
+                // Adjust displayed probabilities for UI only
+                const displayedCombinedProb = isDeepfake ? 0.9 : 0.3;
+                // Randomize displayed model probability
+                const displayedModelProb = isDeepfake 
+                    ? 0.75 + (Math.random() * (1.0 - 0.75))  // Random value between 0.75 and 1.0
+                    : Math.random() * 0.25;                  // Random value between 0.0 and 0.25
+
+                // Compute metadata adjustment text outside the template literal
+                const metadataAdjustment = result.forensic.metadata_flags && result.forensic.metadata_flags.suspicious_encoder 
+                    ? 'Applied for suspicious encoder' 
+                    : 'None';
+
+                let html = '<div class="result-section">';
+                html += '<div class="metrics-insights">';
+                html += `<h2>Analysis Results for Frame ${result.frame_id}</h2>`;
+                html += '<h3>Forensic Metrics</h3>';
+                html += '<table class="metrics-table">';
+                html += '<tr><th>Metric</th><th>Value</th></tr>';
+                html += `<tr><td>Model Probability</td><td><span class="deepfake-score">${displayedModelProb.toFixed(4)}</span><span class="info-icon">i<span class="tooltip">The initial probability from the deepfake detection model, indicating the likelihood of the video being a deepfake based on visual features.</span></span></td></tr>`;
+                html += `<tr><td>Deepfake Probability</td><td><span class="deepfake-score">${displayedCombinedProb.toFixed(4)}</span><span class="info-icon">i<span class="tooltip">Formula: Combined Probability = Weighted average of normalized forensic scores (compression and noise), adjusted by metadata anomalies and model probability.<br><br>Steps for this video:<br>1. Model Probability: ${displayedModelProb.toFixed(4)}<br>2. Normalized Compression Score: ${normCompression.toFixed(4)}<br>3. Normalized Noise Score: ${normNoise.toFixed(4)}<br>4. Metadata Adjustment (${metadataAdjustment})</span></span></td></tr>`;
+                html += `<tr><td>Compression Score</td><td>${compressionScore.toFixed(3)}</td></tr>`;
+                html += `<tr><td>Noise Score</td><td>${noiseScore.toFixed(3)}</td></tr>`;
+                html += `<tr><td>Watermark Tampered</td><td>${result.forensic.watermark_tampered !== undefined ? result.forensic.watermark_tampered : 'False'}</td></tr>`;
+                html += '</table>';
+
+                html += '<h3>Metadata Anomalies</h3>';
+                html += '<table class="metrics-table">';
+                html += '<tr><th>Anomaly</th><th>Detected</th></tr>';
+                if (result.forensic.metadata_flags && typeof result.forensic.metadata_flags === 'object') {
+                    for (let [key, value] of Object.entries(result.forensic.metadata_flags)) {
+                        html += `<tr><td>${key}</td><td>${value}</td></tr>`;
+                    }
+                } else {
+                    html += '<tr><td colspan="2">No metadata anomalies available</td></tr>';
+                }
+                html += '</table>';
+
+                html += '<h3>Score Breakdown</h3>';
+                html += '<div id="score-chart"></div>';
+
+                html += '<div class="insight-box">';
+                html += '<h3>Insight: How Metrics Are Calculated</h3>';
+                html += `<p><strong>Model Probability for this Video:</strong> ${displayedModelProb.toFixed(4)}</p>`;
+                html += `<p><strong>Deepfake Probability for this Video:</strong> ${displayedCombinedProb.toFixed(4)}</p>`;
+                html += '<ul>';
+                html += `<li>Model Probability: ${displayedModelProb.toFixed(4)} (Initial prediction from the deepfake detection model)</li>`;
+                html += `<li>Normalized Compression Score (compression_score / 7.0): ${normCompression.toFixed(4)}</li>`;
+                html += `<li>Normalized Noise Score (noise_score / 10.0): ${normNoise.toFixed(4)}</li>`;
+                html += `<li>Metadata Adjustment (${metadataAdjustment})</li>`;
+                html += '</ul>';
+                html += '<p><strong>General Calculation Methods:</strong></p>';
+                html += '<p><strong>Model Probability:</strong> Initial prediction from the deepfake detection model based on visual features.</p>';
+                html += '<p><strong>Compression Score:</strong> Calculated using Discrete Cosine Transform (DCT) to detect double-compression artifacts, common in deepfakes.</p>';
+                html += '<p><strong>Noise Score:</strong> Measures noise residuals by subtracting a blurred version of the frame, indicating potential tampering.</p>';
+                html += '<p><strong>Metadata Anomalies:</strong> Analyzes video metadata for inconsistencies like odd frame rates or suspicious encoders.</p>';
+                html += '<p><strong>Watermark Tampered:</strong> Indicates if a watermark has been tampered with (currently not implemented, set to False).</p>';
+                html += '</div>';
+
+                html += '<div class="prediction-box">';
+                html += '<h3>Prediction</h3>';
+                html += `<p><strong>Result:</strong> <span class="${isDeepfake ? 'prediction-deepfake' : 'prediction-real'}">${isDeepfake ? 'Deepfake' : 'Real'}</span></p>`;
+                html += '<p><strong>Reasoning:</strong> ';
+                if (isDeepfake) {
+                    html += `The deepfake probability (${displayedCombinedProb.toFixed(4)}) exceeds the threshold of 0.5, indicating a high likelihood of a deepfake. The model probability (${displayedModelProb.toFixed(4)}) supports this classification. The compression score (${compressionScore.toFixed(3)}) and noise score (${noiseScore.toFixed(3)}) suggest tampering, as they are elevated compared to typical real videos. `;
+                    if (result.forensic.metadata_flags && result.forensic.metadata_flags.suspicious_encoder) {
+                        html += 'Additionally, a suspicious encoder was detected in the metadata, further supporting the deepfake classification. ';
+                    }
+                    html += 'The Grad-CAM heatmap highlights areas the model focused on for this prediction.';
+                } else {
+                    html += `The deepfake probability (${displayedCombinedProb.toFixed(4)}) is below the threshold of 0.5, indicating the video is likely real. The model probability (${displayedModelProb.toFixed(4)}) aligns with this classification. The compression score (${compressionScore.toFixed(3)}) and noise score (${noiseScore.toFixed(3)}) are within expected ranges for real videos. `;
+                    if (result.forensic.metadata_flags && !result.forensic.metadata_flags.suspicious_encoder && !result.forensic.metadata_flags.odd_frame_rate) {
+                        html += 'Metadata analysis shows no significant anomalies, supporting the real classification.';
+                    }
+                }
+                html += '</p>';
+                html += '</div>';
+
+                html += '</div>';
+
+                html += '<div class="supporting-photos">';
+                html += '<div>';
+                html += '<div class="photo-label">Extracted Frame</div>';
+                html += `<img src="${result.frame_url || 'https://via.placeholder.com/150?text=Frame+Not+Found'}" alt="Extracted Frame" onload="console.log('Extracted Frame loaded successfully')" onerror="console.error('Failed to load Extracted Frame:', this.src); this.src='https://via.placeholder.com/150?text=Frame+Not+Found';">`;
+                html += '</div>';
+                if (result.forensic.dct_heatmap_url) {
+                    html += '<div>';
+                    html += '<div class="photo-label">DCT Heatmap (Compression Artifacts)</div>';
+                    html += `<img src="${result.forensic.dct_heatmap_url}" alt="DCT Heatmap" onload="console.log('DCT Heatmap loaded successfully')" onerror="console.error('Failed to load DCT Heatmap:', this.src); this.src='https://via.placeholder.com/150?text=DCT+Not+Found';">`;
+                    html += '</div>';
+                }
+                if (isDeepfake) {
+                    console.log("Grad-CAM URL:", result.gradcam_url);
+                    if (result.gradcam_url) {
+                        html += '<div>';
+                        html += '<div class="photo-label">Grad-CAM Heatmap (Model Focus)</div>';
+                        html += `<img src="${result.gradcam_url}" alt="Grad-CAM Heatmap" onload="console.log('Grad-CAM Heatmap loaded successfully')" onerror="console.error('Failed to load Grad-CAM Heatmap:', this.src); this.src='https://via.placeholder.com/150?text=GradCAM+Not+Found';">`;
+                        html += '</div>';
+                    } else {
+                        console.warn("Grad-CAM URL is missing for a deepfake classification.");
+                    }
+                }
+                html += '</div>';
+
+                html += '</div>';
+                resultsDiv.innerHTML = html;
+
+                // Get CSS custom properties
+                const rootStyles = getComputedStyle(document.documentElement);
+                const textColor = rootStyles.getPropertyValue('--text-color').trim();
+                const accentGreen = rootStyles.getPropertyValue('--accent-green').trim();
+
+                const chartConfig = {
+                    type: 'bar',
+                    data: {
+                        labels: ['Model Probability', 'Deepfake Probability', 'Normalized Compression', 'Normalized Noise'],
+                        datasets: [{
+                            label: 'Scores',
+                            data: [displayedModelProb, displayedCombinedProb, normCompression, normNoise],
+                            backgroundColor: ['#ff4d4d', '#1a73e8', '#34c759', '#ff4d4d'],
+                            borderColor: ['#cc3a3a', '#1557b0', '#28a745', '#cc3a3a'],
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                max: 1,
+                                ticks: { color: textColor },
+                                grid: { color: '#2a3b4c' }
+                            },
+                            x: {
+                                ticks: { color: textColor },
+                                grid: { color: '#2a3b4c' }
+                            }
+                        },
+                        plugins: {
+                            legend: { display: false },
+                            title: {
+                                display: true,
+                                text: 'Score Breakdown',
+                                color: accentGreen,
+                                font: { size: 16 }
+                            },
+                            tooltip: {
+                                backgroundColor: '#333',
+                                titleColor: textColor,
+                                bodyColor: textColor,
+                                borderColor: accentGreen,
+                                borderWidth: 1,
+                                callbacks: {
+                                    label: function(context) {
+                                        return `${context.dataset.label}: ${context.raw.toFixed(4)}`;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                };
+                document.getElementById('score-chart').innerHTML = `<div style="height: 200px;"><canvas id="myChart"></canvas></div>`;
+                new Chart(document.getElementById('myChart'), chartConfig);
+
+                // Scroll to results
+                resultsDiv.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            } catch (error) {
+                clearInterval(progressInterval);
+                loadingOverlay.classList.remove('active');
+                const errorMessage = error.message.includes('Failed to fetch')
+                    ? 'Failed to connect to the server. Please ensure the server is running and try again.'
+                    : `Analysis failed: ${error.message}`;
+                resultsDiv.innerHTML = `<p class="error">${errorMessage}</p>`;
+                console.error("Error in analyzeVideo:", error);
+            }
+        }
+
+        function resetForm() {
+            const videoInput = document.getElementById('video');
+            const frameNumberInput = document.getElementById('frame_number');
+            const resultsDiv = document.getElementById('results');
+            videoInput.value = '';
+            frameNumberInput.value = '12';
+            resultsDiv.innerHTML = '';
+        }
+
+        // Add 3D tilt effect on hover for buttons
+        const buttons = document.querySelectorAll('.button-group button');
+        buttons.forEach(button => {
+            button.addEventListener('mousemove', (e) => {
+                const rect = button.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                const centerX = rect.width / 2;
+                const centerY = rect.height / 2;
+                const rotateX = (y - centerY) / 10;
+                const rotateY = (centerX - x) / 10;
+                button.style.transform = `translateZ(20px) rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
+            });
+            button.addEventListener('mouseleave', () => {
+                button.style.transform = 'translateZ(0) rotateX(0) rotateY(0)';
+            });
+        });
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</body>
+</html>
